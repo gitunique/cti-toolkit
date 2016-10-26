@@ -1,8 +1,9 @@
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import  # to get the right 'csv' module
 
 import contextlib
 import csv
-import StringIO
+import io
 
 from .base import StixTransform
 
@@ -47,7 +48,7 @@ class StixTextTransform(StixTransform):
 
     def join(self, items):
         """str.join, but with quoting when the items contain delimiters."""
-        with contextlib.closing(StringIO.StringIO()) as sio:
+        with contextlib.closing(io.StringIO()) as sio:
             csv.writer(sio, delimiter=self._separator).writerow(items)
             return sio.getvalue().strip()
 
@@ -100,9 +101,9 @@ class StixTextTransform(StixTransform):
         text = self.header() if self._include_header else ''
 
         if self.OBJECT_FIELDS:
-            object_types = self.OBJECT_FIELDS.keys()
+            object_types = list(self.OBJECT_FIELDS.keys())
         else:
-            object_types = self._observables.keys()
+            object_types = list(self._observables.keys())
         for object_type in sorted(object_types):
             object_text = self.text_for_object_type(object_type)
             if object_text:

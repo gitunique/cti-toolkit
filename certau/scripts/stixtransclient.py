@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This script supports transforming indicators (observables) from a STIX Package
 into the Bro Intelligence Format. It can interact with a TAXII server to obtain
@@ -7,7 +8,7 @@ the STIX package(s), or a STIX package file can be supplied.
 import sys
 import logging
 import pkg_resources
-from StringIO import StringIO
+from io import StringIO
 
 import configargparse
 from stix.core import STIXPackage

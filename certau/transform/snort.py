@@ -1,6 +1,9 @@
-import re
+# -*- coding: utf-8 -*-
+from future.standard_library import install_aliases
+install_aliases()
 
-from urlparse import urlparse
+import re
+from urllib.parse import urlparse
 
 from .text import StixTextTransform
 

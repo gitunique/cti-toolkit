@@ -35,10 +35,11 @@ setup(
     },
     install_requires=[
         'configargparse',
+        'future',
         'lxml',
         'libtaxii',
-        'cybox==2.1.0.12',
-        'stix==1.1.1.7',
+        'cybox>=2.1.0.13',
+        'stix>=1.2.0.1',
         'stix-ramrod',
         'mixbox',
         'pymisp',

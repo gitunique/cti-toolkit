@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Classes for transforming STIX packages to various formats.
 
 The base class :py:class:`StixTransform` provides helper functions for

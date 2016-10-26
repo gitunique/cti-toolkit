@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 
 from cybox.objects.address_object import Address

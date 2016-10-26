@@ -1,7 +1,8 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import logging
-from StringIO import StringIO
+from io import StringIO
 
 import dateutil.parser
 from libtaxii import get_message_from_http_response, VID_TAXII_XML_11
@@ -39,7 +40,7 @@ class SimpleTaxiiClient(HttpClient, StixSource):
     """
 
     def __init__(self, hostname, path, collection,
-                 use_ssl=False, username=None, password=None, port=None, 
+                 use_ssl=False, username=None, password=None, port=None,
                  key_file=None, cert_file=None, ca_file=None, begin_ts=None,
                  end_ts=None, subscription_id=None):
         super(SimpleTaxiiClient, self).__init__()

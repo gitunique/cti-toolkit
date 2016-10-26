@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 import logging
 import pprint
 import copy
 
-from cybox import EntityList
+from mixbox.entities import EntityList
 from cybox.core import Object
 from cybox.common import ObjectProperties
 from stix.extensions.marking.tlp import TLPMarkingStructure
