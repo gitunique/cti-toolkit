@@ -2,7 +2,12 @@ from __future__ import absolute_import
 
 import contextlib
 import csv
-import StringIO
+
+# handle py2 versus py3 
+try: 
+   from StringIO import StringIO
+except:
+   from io import StringIO
 
 from .base import StixTransform
 
@@ -81,7 +86,7 @@ class StixTextTransform(StixTransform):
 
     def join(self, items):
         """str.join, but with quoting when the items contain delimiters."""
-        with contextlib.closing(StringIO.StringIO()) as sio:
+        with contextlib.closing(StringIO()) as sio:
             csv.writer(sio, delimiter=self.separator).writerow(items)
             return sio.getvalue().strip()
 

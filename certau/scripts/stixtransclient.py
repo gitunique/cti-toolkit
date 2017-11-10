@@ -8,7 +8,14 @@ import os
 import sys
 import logging
 import dateutil
-import urlparse
+
+# handle PY2 versus PY3 for urlunparse()
+try:
+    from urlparse import urlunparse
+except:
+    from urllib import parse
+    urlunparse = parse.urlunparse
+
 import pickle
 
 import configargparse
@@ -472,7 +479,7 @@ def main():
             if options.port:
                 netloc += ':{}'.format(options.port)
             url_parts = [scheme, netloc, options.path, '', '', '']
-            poll_url = urlparse.urlunparse(url_parts)
+            poll_url = urlunparse(url_parts)
         else:
             poll_url = options.poll_url
 

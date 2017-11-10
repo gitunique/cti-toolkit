@@ -1,6 +1,10 @@
 import os
 import logging
-import urlparse
+# handle py2 versus py3
+try:
+    from urlparse import urlparse
+except:
+    from urllib.parse import urlparse
 
 from libtaxii import get_message_from_http_response, VID_TAXII_XML_11
 from libtaxii.messages_11 import PollRequest, PollFulfillmentRequest
@@ -137,7 +141,7 @@ class SimpleTaxiiClient(HttpClient):
         """Send the TAXII poll request to the server using the given URL."""
 
         # Parse the poll_url to get the parts required by libtaxii
-        url_parts = urlparse.urlparse(poll_url)
+        url_parts = urlparse(poll_url)
 
         # Allow credentials to be provided in poll_url
         if url_parts.username and url_parts.password:

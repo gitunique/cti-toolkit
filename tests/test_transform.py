@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """Basic high-level tests of the transform functionality."""
 import csv
-import StringIO
+import six
+# handle py2 versus py3 issues
+try:
+    from StringIO import StringIO
+except: 
+    from io import StringIO
+
 import textwrap
 
 import certau.transform
@@ -80,9 +86,12 @@ def test_text_delimiter_quoting(package):
     assert joined == '"first|second"|third'
 
     # This quoting is compatible with csv.reader.
-    reader = csv.reader(StringIO.StringIO(joined), delimiter='|')
+    reader = csv.reader(StringIO(joined), delimiter='|')
 
-    assert reader.next() == ['first|second', 'third']
+    if six.PY3:
+        assert reader.__next__() == ['first|second', 'third']
+    else:
+        assert reader.next() == ['first|second', 'third']
 
 
 def test_transform_to_stats(package):

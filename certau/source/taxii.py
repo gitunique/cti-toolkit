@@ -1,4 +1,8 @@
-from StringIO import StringIO
+# handle py2 versus py3 for StringIO
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
 
 from certau.lib.taxii.util import file_name_for_content_block
 from certau.source.base import StixSourceItem

@@ -1,6 +1,10 @@
 """Test setup."""
 import sys
-import StringIO
+try:
+   from StringIO import StringIO
+except:
+   # assume python3 so...
+   from io import StringIO
 import pytest
 import stix
 from certau.scripts import stixtransclient
@@ -13,8 +17,8 @@ def package():
     If you include 'package' as a test argument, you have access to a
     pre-loaded STIX package, ready to transform.
     """
-    with open('tests/CA-TEST-STIX.xml', 'rb') as stix_f:
-        stix_io = StringIO.StringIO(stix_f.read())
+    with open('tests/CA-TEST-STIX.xml', 'rt') as stix_f:
+        stix_io = StringIO(stix_f.read())
         return stix.core.STIXPackage.from_xml(stix_io)
 
 

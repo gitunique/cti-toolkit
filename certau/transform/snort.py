@@ -1,4 +1,9 @@
-from urlparse import urlparse
+# handle py2 versus py3
+try:
+   from urlparse import urlparse
+except:
+   from urllib.parse import urlparse
+
 
 from .text import StixTextTransform
 
