@@ -3,6 +3,7 @@ from stix.extensions.marking import ais
 
 from .helpers import dereference_observables
 
+
 def ais_refactor(package, proprietary, consent, color, organisation, industry,
                  country, admin_area):
     """Refactor a STIX package to meet AIS requirements."""
