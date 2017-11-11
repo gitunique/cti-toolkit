@@ -9,7 +9,6 @@ import sys
 import logging
 import dateutil
 import urlparse
-import pickle
 
 from certau.source import StixFileSource, TaxiiContentBlockSource
 from certau.transform import StixTextTransform, StixStatsTransform
@@ -28,33 +27,6 @@ def _process_package(package, transform_class, transform_kwargs):
         sys.stdout.write(transform.text())
     elif isinstance(transform, StixMispTransform):
         transform.publish()
-
-
-def get_taxii_poll_state(filename, poll_url, collection):
-    if os.path.isfile(filename):
-        with open(filename, 'r') as state_file:
-            poll_state = pickle.load(state_file)
-            if isinstance(poll_state, dict) and poll_url in poll_state:
-                if collection in poll_state[poll_url]:
-                    time_string = poll_state[poll_url][collection]
-                    return dateutil.parser.parse(time_string)
-    return None
-
-
-def set_taxii_poll_state(filename, poll_url, collection, timestamp):
-    if timestamp is not None:
-        poll_state = dict()
-        if os.path.isfile(filename):
-            with open(filename, 'r') as state_file:
-                poll_state = pickle.load(state_file)
-                if not isinstance(poll_state, dict):
-                    raise Exception('unexpected content encountered when '
-                                    'reading TAXII poll state file')
-        if poll_url not in poll_state:
-            poll_state[poll_url] = dict()
-        poll_state[poll_url][collection] = str(timestamp)
-        with open(filename, 'w') as state_file:
-            pickle.dump(poll_state, state_file)
 
 
 def main():
@@ -137,15 +109,8 @@ def main():
             url_parts = [scheme, netloc, options.path, '', '', '']
             options.poll_url = urlparse.urlunparse(url_parts)
 
-        # Use state file to grab begin_timestamp if possible
-        # Otherwise, parse begin and end timestamps if provided
-        if options.state_file and not options.begin_timestamp:
-            begin_timestamp = get_taxii_poll_state(
-                filename=options.state_file,
-                poll_url=options.poll_url,
-                collection=options.collection,
-            )
-        elif options.begin_timestamp:
+        # Parse begin and end timestamps if provided
+        if options.begin_timestamp:
             begin_timestamp = dateutil.parser.parse(options.begin_timestamp)
         else:
             begin_timestamp = None
@@ -167,6 +132,7 @@ def main():
             subscription_id=options.subscription_id,
             begin_timestamp=begin_timestamp,
             end_timestamp=end_timestamp,
+            state_file=options.state_file,
         )
 
         source = TaxiiContentBlockSource(
@@ -208,15 +174,6 @@ def main():
                 source_item.save(options.xml_output)
             else:
                 _process_package(package, transform_class, transform_kwargs)
-
-    # Update the timestamp for the latest poll
-    if options.taxii and options.state_file and taxii_client.poll_end_time:
-        set_taxii_poll_state(
-            filename=options.state_file,
-            poll_url=options.poll_url,
-            collection=options.collection,
-            timestamp=taxii_client.poll_end_time,
-        )
 
 
 if __name__ == '__main__':
