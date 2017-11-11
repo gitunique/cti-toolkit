@@ -22,13 +22,18 @@ def main():
     parser = get_arg_parser()
     options = parser.parse_args()
 
-    logger = logging.getLogger(__name__)
-    if options.debug:
-        logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+    # Initialise logging to stderr, capture warnings
+    logging.basicConfig(stream=sys.stderr)
+    logging.captureWarnings(True)
+    logger = logging.getLogger()
+    if options.quiet:
+        logger.setLevel(logging.ERROR)
     elif options.verbose:
-        logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+        logger.setLevel(logging.INFO)
+    elif options.debug:
+        logger.setLevel(logging.DEBUG)
     else:
-        logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
+        logger.setLevel(logging.WARNING)
     logger.info("logging enabled")
 
     transform_kwargs = {}

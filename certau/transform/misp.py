@@ -1,14 +1,13 @@
 import time
-import warnings
+import logging
 from datetime import datetime
 
 from cybox.common import Hash
 from cybox.objects.address_object import Address
 from cybox.objects.uri_object import URI
 
-# suppress PyMISP warning about Python 2
-warnings.filterwarnings('ignore', 'You\'re using python 2, it is strongly '
-                        'recommended to use python >=3.4')
+# suppress PyMISP warnings about Python 2
+logging.getLogger('pymisp').setLevel(logging.ERROR)
 from pymisp import PyMISP
 
 from certau.util.stix.helpers import package_time
