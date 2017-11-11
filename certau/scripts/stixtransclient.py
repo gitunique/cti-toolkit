@@ -8,7 +8,8 @@ import os
 import sys
 import logging
 import dateutil
-import urlparse
+
+from six.moves.urllib.parse import urlunparse
 
 from certau.source import StixFileSource, TaxiiContentBlockSource
 from certau.transform import transform_package
@@ -101,7 +102,9 @@ def main():
             if options.port:
                 netloc += ':{}'.format(options.port)
             url_parts = [scheme, netloc, options.path, '', '', '']
-            options.poll_url = urlparse.urlunparse(url_parts)
+            poll_url = urlunparse(url_parts)
+        else:
+            poll_url = options.poll_url
 
         # Parse begin and end timestamps if provided
         if options.begin_timestamp:

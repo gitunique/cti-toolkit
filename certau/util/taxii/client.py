@@ -2,7 +2,8 @@ import os
 import logging
 import dateutil
 import pickle
-import urlparse
+
+from six.moves.urllib.parse import urlparse
 
 from libtaxii import get_message_from_http_response, VID_TAXII_XML_11
 from libtaxii.messages_11 import PollRequest, PollFulfillmentRequest
@@ -135,7 +136,7 @@ class SimpleTaxiiClient(HttpClient):
     @staticmethod
     def get_poll_time(filename, poll_url, collection):
         if os.path.isfile(filename):
-            with open(filename, 'r') as state_file:
+            with open(filename, 'rb') as state_file:
                 poll_state = pickle.load(state_file)
                 if isinstance(poll_state, dict) and poll_url in poll_state:
                     if collection in poll_state[poll_url]:
@@ -148,7 +149,7 @@ class SimpleTaxiiClient(HttpClient):
         if timestamp is not None:
             poll_state = dict()
             if os.path.isfile(filename):
-                with open(filename, 'r') as state_file:
+                with open(filename, 'rb') as state_file:
                     poll_state = pickle.load(state_file)
                     if not isinstance(poll_state, dict):
                         raise Exception('unexpected content encountered when '
@@ -156,15 +157,15 @@ class SimpleTaxiiClient(HttpClient):
             if poll_url not in poll_state:
                 poll_state[poll_url] = dict()
             poll_state[poll_url][collection] = str(timestamp)
-            with open(filename, 'w') as state_file:
-                pickle.dump(poll_state, state_file)
+            with open(filename, 'wb') as state_file:
+                pickle.dump(poll_state, state_file, protocol=2)
 
     def poll(self, poll_url, collection, subscription_id=None,
              begin_timestamp=None, end_timestamp=None, state_file=None):
         """Send the TAXII poll request to the server using the given URL."""
 
         # Parse the poll_url to get the parts required by libtaxii
-        url_parts = urlparse.urlparse(poll_url)
+        url_parts = urlparse(poll_url)
 
         # Allow credentials to be provided in poll_url
         if url_parts.username and url_parts.password:

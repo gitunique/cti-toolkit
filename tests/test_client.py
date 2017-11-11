@@ -184,6 +184,9 @@ def test_send_poll_request():
         password='pass',
     )
 
+    # ensure required pre-condition
+    assert isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty)
+
     # poll() should fail to get a valid poll response
     # and throw an exception as a result - below ensures this
     with pytest.raises(Exception) as excinfo:
@@ -194,6 +197,8 @@ def test_send_poll_request():
             begin_timestamp='2015-12-30T10:13:05.00000+10:00',
             end_timestamp='2015-12-30T18:09:43.00000+10:00',
         )
+        print("polled sample taxii server")
+
         # Need to trigger exception by calling the generator
         for content_block in content_blocks:
             pass
@@ -203,11 +208,11 @@ def test_send_poll_request():
     request = httpretty.last_request()
 
     # Remove non-repeatable headers
-    headers = request.headers.dict
+    headers = {k.lower(): v for k, v in request.headers.items()}
     del headers['content-length']
 
     # Check we have the correct request headers
-    assert request.headers.dict == {
+    assert headers == {
         'x-taxii-accept': 'urn:taxii.mitre.org:message:xml:1.1',
         'x-taxii-protocol': 'urn:taxii.mitre.org:protocol:http:1.0',
         'accept-encoding': 'identity',

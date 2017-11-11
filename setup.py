@@ -48,5 +48,6 @@ setup(
         'mixbox',
         'pymisp>=2.4.82',
         'requests',
+        'six',
     ]
 )

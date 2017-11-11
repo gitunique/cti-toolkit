@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from six import StringIO
 
 from certau.util.taxii import file_name_for_content_block
 from certau.source.base import StixSourceItem
