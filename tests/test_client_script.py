@@ -17,9 +17,9 @@ def test_text_file_basic_transform(client_wrapper):
 
     stixtransclient.main()
 
-    package, _class, kwargs = client_wrapper.last_args()
+    package, transform, kwargs = client_wrapper.last_args()
     assert isinstance(package, stix.core.STIXPackage)
-    assert _class is certau.transform.StixCsvTransform
+    assert transform == 'csv'
     assert kwargs == dict(
         default_title=None,
         default_description=None,

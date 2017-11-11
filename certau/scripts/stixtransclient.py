@@ -11,22 +11,11 @@ import dateutil
 import urlparse
 
 from certau.source import StixFileSource, TaxiiContentBlockSource
-from certau.transform import StixTextTransform, StixStatsTransform
-from certau.transform import StixCsvTransform, StixBroIntelTransform
-from certau.transform import StixMispTransform, StixSnortTransform
+from certau.transform import transform_package
 from certau.util.stix.ais import ais_refactor
 from certau.util.stix.helpers import package_tlp
 from certau.util.taxii.client import SimpleTaxiiClient
 from certau.util.config import get_arg_parser
-
-
-def _process_package(package, transform_class, transform_kwargs):
-    """Loads a STIX package and runs a transform over it."""
-    transform = transform_class(package, **transform_kwargs)
-    if isinstance(transform, StixTextTransform):
-        sys.stdout.write(transform.text())
-    elif isinstance(transform, StixMispTransform):
-        transform.publish()
 
 
 def main():
@@ -47,20 +36,20 @@ def main():
     transform_kwargs['default_description'] = options.default_description
     transform_kwargs['default_tlp'] = options.default_tlp
     if options.stats:
-        transform_class = StixStatsTransform
+        transform = 'stats'
     elif options.text:
-        transform_class = StixCsvTransform
+        transform = 'csv'
         if options.field_separator:
             transform_kwargs['separator'] = options.field_separator
     elif options.bro:
-        transform_class = StixBroIntelTransform
+        transform = 'brointel'
         transform_kwargs['do_notice'] = 'F' if options.bro_no_notice else 'T'
         if options.source:
             transform_kwargs['source'] = options.source
         if options.base_url:
             transform_kwargs['url'] = options.base_url
     elif options.misp:
-        transform_class = StixMispTransform
+        transform = 'misp'
         misp_kwargs = dict(
             misp_url=options.misp_url,
             misp_key=options.misp_key,
@@ -77,7 +66,7 @@ def main():
         transform_kwargs['information'] = options.misp_info
         transform_kwargs['published'] = options.misp_published
     elif options.snort:
-        transform_class = StixSnortTransform
+        transform = 'snort'
         transform_kwargs['snort_initial_sid'] = options.snort_initial_sid
         transform_kwargs['snort_rule_revision'] = options.snort_rule_revision
         transform_kwargs['snort_rule_action'] = options.snort_rule_action
@@ -173,7 +162,7 @@ def main():
                     )
                 source_item.save(options.xml_output)
             else:
-                _process_package(package, transform_class, transform_kwargs)
+                transform_package(package, transform, transform_kwargs)
 
 
 if __name__ == '__main__':

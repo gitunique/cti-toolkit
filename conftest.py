@@ -21,15 +21,15 @@ def package():
 @pytest.fixture
 def client_wrapper(monkeypatch):
     """Wrapper around the client to test command line arguments are mapped to
-    stixtransclient._process_package() properly.
+    certau.transform.transform_package() properly.
     """
     last_call_args = []
 
-    def save_args(pkg, cls, kwargs):
+    def save_args(pkg, transform, kwargs):
         """Drop-in replacement for capturing how it was called."""
         del last_call_args[:]
-        last_call_args.extend((pkg, cls, kwargs))
-    monkeypatch.setattr(stixtransclient, '_process_package', save_args)
+        last_call_args.extend((pkg, transform, kwargs))
+    monkeypatch.setattr(stixtransclient, 'transform_package', save_args)
 
     class ClientWrapper(object):
         """Wrap the two different helpers."""
