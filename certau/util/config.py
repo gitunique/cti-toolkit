@@ -29,27 +29,19 @@ def get_arg_parser():
         help="configuration file to use",
     )
     global_group.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="verbose output",
+    )
+    global_group.add_argument(
+        "-d", "--debug",
+        action="store_true",
+        help="enable debug output",
+    )
+    global_group.add_argument(
         "-V", "--version",
         action="version",
         version="{} (by CERT Australia)".format(version_string),
-    )
-
-    # Logging options
-    logging_ex_group = global_group.add_mutually_exclusive_group()
-    logging_ex_group.add_argument(
-        "-q", "--quiet",
-        action="store_true",
-        help="suppress warnings and informational logs",
-    )
-    logging_ex_group.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="verbose logging",
-    )
-    logging_ex_group.add_argument(
-        "-d", "--debug",
-        action="store_true",
-        help="most verbose (debug) logging",
     )
 
     # Source options
@@ -82,6 +74,12 @@ def get_arg_parser():
         "-t", "--text",
         action="store_true",
         help="output observables in delimited text",
+    )
+    output_ex_group.add_argument(
+        "-T", "--test_mechanisms",
+        action="store_true",
+        help=("output indicator test mechanisms contained within package" +
+             "(eg Yara / Snort)"),
     )
     output_ex_group.add_argument(
         "-b", "--bro",

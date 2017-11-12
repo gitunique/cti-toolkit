@@ -8,33 +8,67 @@ import os
 import sys
 import logging
 import dateutil
-
-from six.moves.urllib.parse import urlunparse
+import urlparse
+import pickle
 
 from certau.source import StixFileSource, TaxiiContentBlockSource
-from certau.transform import transform_package
+from certau.transform import StixTextTransform, StixStatsTransform
+from certau.transform import StixCsvTransform, StixBroIntelTransform
+from certau.transform import StixMispTransform, StixSnortTransform
+from certau.transform import StixTestTransform
 from certau.util.stix.ais import ais_refactor
 from certau.util.stix.helpers import package_tlp
 from certau.util.taxii.client import SimpleTaxiiClient
 from certau.util.config import get_arg_parser
 
 
+def _process_package(package, transform_class, transform_kwargs):
+    """Loads a STIX package and runs a transform over it."""
+    transform = transform_class(package, **transform_kwargs)
+    if isinstance(transform, StixTextTransform):
+        sys.stdout.write(transform.text())
+    elif isinstance(transform, StixMispTransform):
+        transform.publish()
+
+
+def get_taxii_poll_state(filename, poll_url, collection):
+    if os.path.isfile(filename):
+        with open(filename, 'r') as state_file:
+            poll_state = pickle.load(state_file)
+            if isinstance(poll_state, dict) and poll_url in poll_state:
+                if collection in poll_state[poll_url]:
+                    time_string = poll_state[poll_url][collection]
+                    return dateutil.parser.parse(time_string)
+    return None
+
+
+def set_taxii_poll_state(filename, poll_url, collection, timestamp):
+    if timestamp is not None:
+        poll_state = dict()
+        if os.path.isfile(filename):
+            with open(filename, 'r') as state_file:
+                poll_state = pickle.load(state_file)
+                if not isinstance(poll_state, dict):
+                    raise Exception('unexpected content encountered when '
+                                    'reading TAXII poll state file')
+        if poll_url not in poll_state:
+            poll_state[poll_url] = dict()
+        poll_state[poll_url][collection] = str(timestamp)
+        with open(filename, 'w') as state_file:
+            pickle.dump(poll_state, state_file)
+
+
 def main():
     parser = get_arg_parser()
     options = parser.parse_args()
 
-    # Initialise logging to stderr, capture warnings
-    logging.basicConfig(stream=sys.stderr)
-    logging.captureWarnings(True)
-    logger = logging.getLogger()
-    if options.quiet:
-        logger.setLevel(logging.ERROR)
+    logger = logging.getLogger(__name__)
+    if options.debug:
+        logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     elif options.verbose:
-        logger.setLevel(logging.INFO)
-    elif options.debug:
-        logger.setLevel(logging.DEBUG)
+        logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     else:
-        logger.setLevel(logging.WARNING)
+        logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     logger.info("logging enabled")
 
     transform_kwargs = {}
@@ -42,20 +76,22 @@ def main():
     transform_kwargs['default_description'] = options.default_description
     transform_kwargs['default_tlp'] = options.default_tlp
     if options.stats:
-        transform = 'stats'
+        transform_class = StixStatsTransform
     elif options.text:
-        transform = 'csv'
+        transform_class = StixCsvTransform
         if options.field_separator:
             transform_kwargs['separator'] = options.field_separator
+    elif options.test_mechanisms:
+        transform_class = StixTestTransform
     elif options.bro:
-        transform = 'brointel'
+        transform_class = StixBroIntelTransform
         transform_kwargs['do_notice'] = 'F' if options.bro_no_notice else 'T'
         if options.source:
             transform_kwargs['source'] = options.source
         if options.base_url:
             transform_kwargs['url'] = options.base_url
     elif options.misp:
-        transform = 'misp'
+        transform_class = StixMispTransform
         misp_kwargs = dict(
             misp_url=options.misp_url,
             misp_key=options.misp_key,
@@ -72,7 +108,7 @@ def main():
         transform_kwargs['information'] = options.misp_info
         transform_kwargs['published'] = options.misp_published
     elif options.snort:
-        transform = 'snort'
+        transform_class = StixSnortTransform
         transform_kwargs['snort_initial_sid'] = options.snort_initial_sid
         transform_kwargs['snort_rule_revision'] = options.snort_rule_revision
         transform_kwargs['snort_rule_action'] = options.snort_rule_action
@@ -102,12 +138,17 @@ def main():
             if options.port:
                 netloc += ':{}'.format(options.port)
             url_parts = [scheme, netloc, options.path, '', '', '']
-            poll_url = urlunparse(url_parts)
-        else:
-            poll_url = options.poll_url
+            options.poll_url = urlparse.urlunparse(url_parts)
 
-        # Parse begin and end timestamps if provided
-        if options.begin_timestamp:
+        # Use state file to grab begin_timestamp if possible
+        # Otherwise, parse begin and end timestamps if provided
+        if options.state_file and not options.begin_timestamp:
+            begin_timestamp = get_taxii_poll_state(
+                filename=options.state_file,
+                poll_url=options.poll_url,
+                collection=options.collection,
+            )
+        elif options.begin_timestamp:
             begin_timestamp = dateutil.parser.parse(options.begin_timestamp)
         else:
             begin_timestamp = None
@@ -129,7 +170,6 @@ def main():
             subscription_id=options.subscription_id,
             begin_timestamp=begin_timestamp,
             end_timestamp=end_timestamp,
-            state_file=options.state_file,
         )
 
         source = TaxiiContentBlockSource(
@@ -170,7 +210,16 @@ def main():
                     )
                 source_item.save(options.xml_output)
             else:
-                transform_package(package, transform, transform_kwargs)
+                _process_package(package, transform_class, transform_kwargs)
+
+    # Update the timestamp for the latest poll
+    if options.taxii and options.state_file and taxii_client.poll_end_time:
+        set_taxii_poll_state(
+            filename=options.state_file,
+            poll_url=options.poll_url,
+            collection=options.collection,
+            timestamp=taxii_client.poll_end_time,
+        )
 
 
 if __name__ == '__main__':

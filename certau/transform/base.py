@@ -2,7 +2,6 @@ import logging
 import pprint
 import copy
 import types
-import six
 
 from mixbox.entities import EntityList
 from cybox.core import Object
@@ -76,6 +75,7 @@ class StixTransform(object):
         self.default_title = default_title
         self.default_description = default_description
         self.default_tlp = default_tlp
+        self.test_mechanisms = self._test_mechanisms_for_package(package)
 
         # Initialise the logger
         self._logger = logging.getLogger()
@@ -188,6 +188,27 @@ class StixTransform(object):
     def _condition_key_for_field(field):
         """Dictionary key used for storing the string condition of a field."""
         return field + '_condition'
+
+    @classmethod
+    def _test_mechanisms_for_package(cls, package):
+        """Extract test mechanisms from a STIX package.
+
+        Collects test mechanisms from a STIX package and returns them
+        as a dictionary.
+
+        Args:
+            package: a :py:class:`stix:STIXPackage` object
+
+        Returns:
+            array: an array of indicators containing test mechanisms.
+                   May be empty.
+        """
+        test_mechanisms = []
+        if package.indicators:
+            for indicator in package.indicators:
+                if (indicator.test_mechanisms is not None):
+                    test_mechanisms.append(indicator)
+        return test_mechanisms
 
     @classmethod
     def _observables_for_package(cls, package):
@@ -320,13 +341,10 @@ class StixTransform(object):
             return next_parts
 
         def _convert_to_str(value):
-            if six.PY2:
-                    if isinstance(value, basestring):
-                        return value.encode('utf-8')
-                    else:
-                        return pprint.pformat(value)
+            if isinstance(value, basestring):
+                return value.encode('utf-8')
             else:
-                    return str(value)
+                return pprint.pformat(value)
 
         def _get_value_condition(value):
             """Set the condition value to '-' if the field doesn't have a
@@ -366,11 +384,11 @@ class StixTransform(object):
 
             # Test if value is not a string and iterable
             iterable = False
-            if not isinstance(value, six.string_types):
+            if not isinstance(value, types.StringType):
                 try:
                     iter(value)
                     iterable = True
-                except TypeError:
+                except TypeError, error:
                     pass
 
             if iterable:
